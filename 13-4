@@ -44,3 +44,4 @@ group by user_id, product_id
 select user_id, product_id, add_cart_time, purchase_time, lead_time
 from action_time_stats
 order by user_id, product_id
+
