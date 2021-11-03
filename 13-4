@@ -1,0 +1,46 @@
+%sparksql
+
+with action_log as (
+select '2016-11-03' as dt, 'A' as session, 'U001' as user_id, 'add_cart' as action, '1' as products, '2016-11-03 18:00:00' as stamp
+union all
+select '2016-11-03' as dt, 'A' as session, 'U001' as user_id, 'add_cart' as action, '2' as products, '2016-11-03 18:01:00' as stamp
+union all
+select '2016-11-03' as dt, 'A' as session, 'U001' as user_id, 'add_cart' as action, '3' as products, '2016-11-03 18:02:00' as stamp
+union all
+select '2016-11-03' as dt, 'A' as session, 'U001' as user_id, 'purchase' as action, '1,2,3' as products, '2016-11-03 18:10:00' as stamp
+union all
+select '2016-11-03' as dt, 'B' as session, 'U002' as user_id, 'add_cart' as action, '1' as products, '2016-11-03 19:00:00' as stamp
+union all
+select '2016-11-03' as dt, 'B' as session, 'U002' as user_id, 'purchase' as action, '1' as products, '2016-11-03 20:00:00' as stamp
+union all
+select '2016-11-03' as dt, 'B' as session, 'U002' as user_id, 'add_cart' as action, '2' as products, '2016-11-03 20:30:00' as stamp
+union all
+select '2016-11-04' as dt, 'C' as session, 'U001' as user_id, 'add_cart' as action, '4' as products, '2016-11-04 12:00:00' as stamp
+union all
+select '2016-11-04' as dt, 'C' as session, 'U001' as user_id, 'add_cart' as action, '5' as products, '2016-11-04 12:00:00' as stamp
+union all
+select '2016-11-04' as dt, 'C' as session, 'U001' as user_id, 'add_cart' as action, '6' as products, '2016-11-04 12:00:00' as stamp
+union all
+select '2016-11-04' as dt, 'D' as session, 'U002' as user_id, 'purchase' as action, '2' as products, '2016-11-04 13:00:00' as stamp
+union all
+select '2016-11-04' as dt, 'D' as session, 'U001' as user_id, 'purchase' as action, '5,6' as products, '2016-11-04 15:00:00' as stamp
+),
+
+row_action_log AS (
+select dt, user_id, action, product_id, stamp
+from action_log LATERAL VIEW explode(split(products, ',')) e AS product_id
+),
+
+action_time_stats AS (
+select user_id, product_id, 
+MIN(CASE action WHEN 'add_cart' THEN dt END) as dt,
+MIN(CASE action WHEN 'add_cart' THEN dt END) as add_cart_time,
+MIN(CASE action WHEN 'purchase' THEN stamp END) as purchase_time,
+MIN(CASE action WHEN 'purchase' THEN unix_timestamp(stamp) END) - MIN(CASE action WHEN 'add_cart' THEN unix_timestamp(stamp) END) as lead_time
+from row_action_log
+group by user_id, product_id
+)
+
+select user_id, product_id, add_cart_time, purchase_time, lead_time
+from action_time_stats
+order by user_id, product_id
