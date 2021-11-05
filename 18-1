@@ -1,0 +1,19 @@
+%sparksql
+
+with
+action_log_with_noise as (
+select '2016-11-03 18:00:00' as stamp, '1b700' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=1' as url, '98.139.183.24' as ip, 'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)'  as user_agent
+union all
+select '2016-11-03 18:00:00' as stamp, '1b700' as session , 'add_cart' as action, 'D001' as products, 'http://www.example.com/detail?id=2' as url, '98.139.183.24' as ip, 'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)'  as user_agent
+union all
+select '2016-11-04 18:00:00' as stamp, 'fdb83' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=2' as url, '127.0.0.1' as ip, 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'  as user_agent
+),
+
+session_count as (
+    select session, count(1) as count
+    from action_log_with_noise
+    group by session
+)
+
+select session, count, rank() over(order by count desc) as rank, percent_rank() over(order by count desc) as percent_rank
+from session_count
