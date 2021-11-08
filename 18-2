@@ -1,0 +1,20 @@
+%sparksql
+
+/*URL 접근수 worst 랭킹 비율 구하기: percent_rank를 이용하여 지정값보다 큰 것들을 필터링하여 구할 수 있다*/
+with
+action_log_with_noise as (
+select '2016-11-03 18:00:00' as stamp, '1b700' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=1' as url, '98.139.183.24' as ip, 'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)'  as user_agent
+union all
+select '2016-11-03 18:00:00' as stamp, '1b700' as session , 'add_cart' as action, 'D001' as products, 'http://www.example.com/detail?id=2' as url, '98.139.183.24' as ip, 'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)'  as user_agent
+union all
+select '2016-11-04 18:00:00' as stamp, 'fdb83' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=2' as url, '127.0.0.1' as ip, 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'  as user_agent
+),
+
+url_count as (
+    select url, count(*) as count
+    from action_log_with_noise
+    group by url
+)
+
+select url, count, rank() over(order by count ASC) as rank, percent_rank() over(order by count asc)
+from url_count
