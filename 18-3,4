@@ -1,0 +1,66 @@
+%sparksql
+/*18-3: remove crawler*/
+
+with 
+action_log_with_noise as (
+select '2016-11-03 18:00:00' as stamp, '1b700' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=1' as url, '98.139.183.24' as ip, 'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)'  as user_agent
+union all
+select '2016-11-03 18:00:00' as stamp, '1b700' as session , 'add_cart' as action, 'D001' as products, 'http://www.example.com/detail?id=2' as url, '98.139.183.24' as ip, 'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)'  as user_agent
+union all
+select '2016-11-04 18:00:00' as stamp, 'fdb83' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=2' as url, '127.0.0.1' as ip, 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'  as user_agent
+union all
+select '2016-11-04 22:00:00' as stamp, 'c33fb' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=2' as url, '216.58.220.238' as ip, 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'  as user_agent
+union all
+select '2016-11-04 22:00:00' as stamp, 'c33fb' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=3' as url, '216.58.220.238' as ip, 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'  as user_agent
+union all
+select '2016-11-04 22:00:00' as stamp, 'c33fb' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=3' as url, '216.58.220.238' as ip, 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'  as user_agent
+)
+
+select *
+from action_log_with_noise
+where not
+    (
+    user_agent LIKE '%bot%'
+    or user_agent LIKE '%crawler%'
+    or user_agent LIKE '%spider%'
+    or user_agent LIKE '%archiver%'
+ )
+
+
+
+%sparksql
+/*18-4: remove crawler using master data*/
+
+with 
+action_log_with_noise as (
+select '2016-11-03 18:00:00' as stamp, '1b700' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=1' as url, '98.139.183.24' as ip, 'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)'  as user_agent
+union all
+select '2016-11-03 18:00:00' as stamp, '1b700' as session , 'add_cart' as action, 'D001' as products, 'http://www.example.com/detail?id=2' as url, '98.139.183.24' as ip, 'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)'  as user_agent
+union all
+select '2016-11-04 18:00:00' as stamp, 'fdb83' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=2' as url, '127.0.0.1' as ip, 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'  as user_agent
+union all
+select '2016-11-04 22:00:00' as stamp, 'c33fb' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=2' as url, '216.58.220.238' as ip, 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'  as user_agent
+union all
+select '2016-11-04 22:00:00' as stamp, 'c33fb' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=3' as url, '216.58.220.238' as ip, 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'  as user_agent
+union all
+select '2016-11-04 22:00:00' as stamp, 'c33fb' as session , 'view' as action, '' as products, 'http://www.example.com/detail?id=3' as url, '216.58.220.238' as ip, 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'  as user_agent
+),
+
+
+mst_bot_user_agent as (
+    select '%bot%' as rule
+    union all select '%crawler%' as rule
+    union all select '%spider%' as rule
+    union all select '%archiver%' as rule
+),
+
+filtered_action_log as (
+    select l.stamp, l.session, l.action, l.products, l.url, l.ip, l.user_agent
+    from action_log_with_noise as l
+    cross join mst_bot_user_agent as m
+    group by l.stamp, l.session, l.action, l.products, l.url, l.ip, l.user_agent
+    having sum(case when l.user_agent like m.rule then 1 else 0 end)=0
+)
+
+select *
+from filtered_action_log
