@@ -1,0 +1,11 @@
+with
+temp as (
+select id, date
+from filter
+)
+
+select id, event_id, type, date
+from event
+join filter on event.id=filter.id
+
+/* left anti join을 하면 filter에 속하지 않는 id만 추출해낼 수 있다: left anti join filter on event.id=filter.id */
