@@ -1,11 +1,4 @@
 %sparksql
-CREATE TABLE dup_action_log(
-    stamp     varchar(255)
-  , session   varchar(255)
-  , user_id   varchar(255)
-  , action    varchar(255)
-  , products  varchar(255)
-);
 
 with dup_action_log as (
 select '2016-11-03 18:00:00' as stamp, '989004ea' as session, 'U001' as user_id, 'click' as action, 'D001' as products
