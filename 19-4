@@ -1,0 +1,37 @@
+%sparksql
+CREATE TABLE dup_action_log(
+    stamp     varchar(255)
+  , session   varchar(255)
+  , user_id   varchar(255)
+  , action    varchar(255)
+  , products  varchar(255)
+);
+
+with dup_action_log as (
+select '2016-11-03 18:00:00' as stamp, '989004ea' as session, 'U001' as user_id, 'click' as action, 'D001' as products
+union all
+select '2016-11-03 19:00:00' as stamp, '47db0370' as session, 'U002' as user_id, 'click' as action, 'D002' as products
+union all
+select '2016-11-03 20:00:00' as stamp, '1cf7678e' as session, 'U003' as user_id, 'click' as action, 'A001' as products
+union all
+select '2016-11-03 21:00:00' as stamp, '5eb2e107' as session, 'U004' as user_id, 'click' as action, 'A001' as products
+union all
+select '2016-11-03 21:00:00' as stamp, 'fe05e1d8' as session, 'U004' as user_id, 'click' as action, 'D001' as products
+union all
+select '2016-11-04 18:00:00' as stamp, '87b5725f' as session, 'U001' as user_id, 'click' as action, 'D001' as products
+union all
+select '2016-11-04 19:00:00' as stamp, 'eee2bb21' as session, 'U005' as user_id, 'click' as action, 'A001' as products
+union all
+select '2016-11-04 20:00:00' as stamp, '5d5b0997' as session, 'U006' as user_id, 'click' as action, 'D001' as products
+union all
+select '2016-11-04 21:00:00' as stamp, '111f2996' as session, 'U007' as user_id, 'click' as action, 'D002' as products
+union all
+select '2016-11-04 22:00:00' as stamp, '3efe001c' as session, 'U008' as user_id, 'click' as action, 'A001' as products
+union all
+select '2016-11-04 22:00:10' as stamp, '3efe001c' as session, 'U008' as user_id, 'click' as action, 'A001' as products)
+
+
+select user_id, products, concat_ws(',', collect_list(session)) as session_list, concat_ws(',', collect_list(stamp)) as stamp_list
+from dup_action_log
+group by user_id, products
+having count(*)>1
