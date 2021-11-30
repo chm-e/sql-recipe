@@ -1,0 +1,56 @@
+%sparksql
+
+with
+access_log as (
+select '2017-01-05 23:35:13' as stamp, '0CVKaz' as session, 'search' as action, 'mynavi quest2' as keyword, 'http://www.example.com/search_result?q=mynavi+quest' as url, '' as referrer, 0 as result_num
+union all
+select '2017-01-05 23:35:13' as stamp, '0CVKaz' as session, 'search' as action, 'mynavi quest the awakening of data' as keyword, 'http://www.example.com/search_result?q=mynavi+quest+the+awakening+of+data' as url, '' as referrer, 630 as result_num
+union all
+select '2017-01-05 23:37:17' as stamp, '0CVKaz' as session, 'detail' as action, '' as keyword, 'http://www.example.com/detail?id=170' as url, 'http://www.example.com/search_result?q=mynavi+quest+the+awakening+of+data' as referrer, null as result_num
+union all
+select '2017-01-05 23:40:10' as stamp, '0CVKaz' as session, 'search' as action, 'mynavi quest the awakening of data' as keyword, 'http://www.example.com/search_result?q=mynavi+quest+the+awakening+of+data' as url, '' as referrer, 630 as result_num
+union all
+select '2017-01-05 23:41:43' as stamp, '0CVKaz' as session, 'detail' as action, '' as keyword, 'http://www.example.com/detail?id=170' as url, 'http://www.example.com/search_result?q=mynavi+quest+the+awakening+of+data' as referrer, null as result_num
+union all
+select '2017-01-05 23:43:10' as stamp, '0CVKaz' as session, 'search' as action, 'mynavi quest the awakening of data' as keyword, 'http://www.example.com/search_result?q=mynavi+quest+the+awakening+of+data' as url, '' as referrer, 630 as result_num
+union all
+select '2017-01-05 23:34:57' as stamp, '1QceiB' as session, 'search' as action, 'yamada taro' as keyword, 'http://www.example.com/search_result?q=yamada+taro' as url, '' as referrer, 367 as result_num
+union all
+select '2017-01-05 23:35:37' as stamp, '1QceiB' as session, 'search' as action, 'yamada taro football' as keyword, 'http://www.example.com/search_result?q=yamada+taro+football' as url, '' as referrer, 105 as result_num
+union all
+select '2017-01-05 23:35:37' as stamp, '1QceiB' as session, 'detail' as action, '' as keyword, 'http://www.example.com/detail?id=99' as url, 'http://www.example.com/search_result?q=yamada+taro+football' as referrer, NULL as result_num
+union all
+select '2017-01-05 23:39:50' as stamp, '1hI43A' as session, 'search' as action, 'history of english' as keyword, 'http://www.example.com/detail?id=9' as url, 'http://www.example.com/search_result?q=history+of+english' as referrer, NULL as result_num
+union all
+select '2017-01-05 23:39:50' as stamp, '1hI43A' as session, 'detail' as action, '' as keyword, 'http://www.example.com/search_result?q=history+of+english' as url, '' as referrer, 343 as result_num
+union all
+select '2017-01-06 23:38:52'  as stamp, '2bGs3i' as session, 'search' as action, 'manicure red' as keyword, 'http://www.example.com/search_result?q=manicure+red' as url, '' as referrer, 827 as result_num
+union all
+select '2017-01-06 23:39:08'  as stamp, '2mmGwD' as session, 'search' as action, 'fabulous how to use' as keyword, 'http://www.example.com/search_result?q=fabulous+how+to+use' as url, '' as referrer, 856 as result_num
+union all
+select '2017-01-06 23:40:05' as stamp, '2mmGwD' as session, 'detail' as action, '' as keyword, 'http://www.example.com/detail?id=51' as url, 'http://www.example.com/search_result?q=fabulous+how+to+use' as referrer, NULL as result_num
+union all
+select '2017-01-05 23:41:23' as stamp, '1QceiB' as session, 'search' as action, 'yamada taro football transfers where' as keyword, 'http://www.example.com/search_result?q=yamada+taro+football+transfers+where' as url, '' as keyword,   0 as result_num
+
+),
+
+access_log_with_next_search as (
+select stamp
+, session
+, action
+, keyword
+, result_num
+, LEAD(action) over(partition by session order by stamp asc rows between 1 following and 1 following) as next_action
+, lead(keyword) over(partition by session order by stamp asc rows between 1 following and 1 following) as next_keyword
+, lead(result_num) over(partition by session order by stamp asc rows between 1 following and 1 following) as next_result_num
+from access_log
+)
+
+select keyword
+, result_num
+, count(1) as retry_count
+, next_keyword
+, next_result_num
+from access_log_with_next_search
+where action='search' and next_action='search'
+group by keyword, result_num, next_keyword, next_result_num
